@@ -13,99 +13,145 @@ const settings = {
 }
 
 const testConnection = () => {
-    // Use connect method to connect to the server
-    MongoClient.connect(url, settings, function (err, client) {
-        assert.equal(null, err);
-        console.log("Connected successfully to server");
-
-        const db = client.db(dbName);
-        console.log("client", client)
-        console.log("db", db)
-        client.close();
-    });
+    const iou = new Promise((resolve, reject) => {
+        // Use connect method to connect to the server
+        MongoClient.connect(url, settings, function (err, client) {
+            if(err){
+                // assert.equal(null, err);
+                reject(err)
+            } else {
+                const db = client.db(dbName);
+                // console.log("client", client)
+                // console.log("db", db)
+                client.close();
+                resolve("Connected successfully to server")
+            }
+        });
+    })
+    return iou
 }
 
 const createContact = (contact) => {
     // Use connect method to connect to the server
-    MongoClient.connect(url, settings, function (err, client) {
-        assert.equal(null, err);
-        console.log("Connected to server for Creation of Contact");
+    let iou = new Promise ((resolve, reject) =>{
 
-        const db = client.db(dbName);
-        // Get the contacts collection
-        const collection = db.collection('contacts');
-        // Insert a document
-        collection.insertOne(contact, function (err, result) {
-            assert.equal(err, null);
-            assert.equal(1, result.result.n);
-            assert.equal(1, result.ops.length);
-            console.log("Inserted a document into the collection");
-            client.close();
-        });
-        
+        MongoClient.connect(url, settings, function (err, client) {
+            if(err){
+                reject(err)
+            }
+            else { 
+                console.log("Connected to server for Creation of Contact");
+                const db = client.db(dbName);
+                // Get the contacts collection
+                const collection = db.collection('contacts');
+                // Insert a document
+                collection.insertOne(contact, function (err, result) {
+                    if(err){
+                        reject(err)
+                    }
+                    else{
+                        client.close();
+                        resolve("Inserted a document into the collection");
+                    }
+                   
+                });
+            } 
+        })
     });
+    return iou
 }
 
 const readContacts = () => {
+    let iou = new Promise((resolve, reject) => {
     // Use connect method to connect to the server
-    MongoClient.connect(url, settings, function (err, client) {
-        assert.equal(null, err);
-        console.log("Connected to server Read Contacts");
+        MongoClient.connect(url, settings, function (err, client) {
+            if(err){
+            reject(err)
+            }else{
+                console.log("Connected to server Read Contacts");
 
-        const db = client.db(dbName);
-        // Get the contacts collection
-        const collection = db.collection('contacts');
-        // Find some documents
-        collection.find({}).toArray(function (err, docs) {
-            assert.equal(err, null);
-            console.log("Found the following records");
-            console.log(docs)
-            client.close();
+                const db = client.db(dbName);
+                // Get the contacts collection
+                const collection = db.collection('contacts');
+                // Find some documents
+                collection.find({}).toArray(function (err, docs) {
+                    if(err){
+                        reject(err)
+                    }else{
+                        const results = {
+                            data: docs,
+                            msg: "Found the following records"
+                        }
+                        
+                        client.close();
+                        resolve(results);
+                    }
+                });
+            }
         });
-    });
+    })
+    return iou;
 }
 
 const updateContact = (id, contact) => {
-    // Use connect method to connect to the server
-    MongoClient.connect(url, settings, function (err, client) {
-        assert.equal(null, err);
-        console.log("Connected to server to Update a Contact");
+    let iou = new Promise((resolve, reject) => {
+        
+        // Use connect method to connect to the server
+        MongoClient.connect(url, settings, function (err, client) {
+            if (err) {
+                reject(err)
+            }
+            else{
+                console.log("Connected to server to Update a Contact");
 
-        const db = client.db(dbName);
-        // Get the contacts collection
-        const collection = db.collection('contacts');
-        // Insert a document
-        collection.updateOne({ '_id': ObjectId(id) }, 
-            { $set: { ...contact } },
-            function (err, result) {
-                assert.equal(err, null);
-                assert.equal(1, result.result.n);
-                console.log("Updated a document in the collection");
-                client.close();
+                const db = client.db(dbName);
+                // Get the contacts collection
+                const collection = db.collection('contacts');
+                // Insert a document
+                collection.updateOne({ '_id': ObjectId(id) }, 
+                    { $set: { ...contact } },
+                    function (err, result) {
+                        if(err){
+                            reject(err)
+                        }  else{
+                            client.close();
+                            resolve("Updated a document in the collection");
+                        }
+                });
+            }
         });
-
-    });
+    })
+    return iou
 }
 
 const deleteContact = (name) => {
-    // Use connect method to connect to the server
-    MongoClient.connect(url, settings, function (err, client) {
-        assert.equal(null, err);
-        console.log("Connected to server to Delete a Contact");
+    let iou = new Promise ((resolve, reject) => {
+        // Use connect method to connect to the server
+        MongoClient.connect(url, settings, function (err, client) {
+            if(err){
+               reject(err) 
+            } else {
+                console.log("Connected to server to Delete a Contact");
+                const db = client.db(dbName);
+                // Get the contacts collection
+                const collection = db.collection('contacts');
+                // Insert a document
+                collection.deleteMany({ 'name': name },
+                    function (err, result) {
+                        if(err){
+                            reject(err)
+                        } else {
+                            client.close();
+                            resolve("Delete documents in the collection")
+                        }
+                        
+                    });
+            }          
+       }); 
+    })
+    return iou
+};
 
-        const db = client.db(dbName);
-        // Get the contacts collection
-        const collection = db.collection('contacts');
-        // Insert a document
-        collection.deleteMany({ 'name': name },
-            function (err, result) {
-                assert.equal(err, null);
-                console.log("Delete documents in the collection");
-                client.close();
-            });
-
-    });
-}
 
 const newContact = {
     "name": "George",
@@ -116,12 +162,20 @@ const changeContact = {
     "name": "Wesley"
 }
 const updateID = '5dc04def1c9d4400000e7530'
-const main = () => {
-    testConnection()
-    createContact(newContact)
-    readContacts()
-    updateContact(updateID, changeContact)
-    deleteContact('George')
+const main = async () => {
+    console.log(await testConnection())
+    console.log('----------------------- Post Test')
+    console.log(await createContact(newContact))
+    console.log('----------------------- Post Create')
+    console.log(await readContacts())
+    console.log('----------------------- Post Read')
+    console.log(await updateContact(updateID, changeContact))
+    console.log('----------------------- Post Update')
+    console.log(await deleteContact('George'))
+    console.log('----------------------- Post Delete')
+    console.log(await readContacts())
+    console.log('----------------------- Post Read')
+
 }
 
 main()
